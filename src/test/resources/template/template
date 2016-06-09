@@ -1,0 +1,4 @@
+<EVENT type="NEW">
+	<USERNAME>${username}</USERNAME>
+	<PASSWORD>${password}</PASSWORD>
+</EVENT>

@@ -13,6 +13,7 @@
 		<activemq.version>5.11.4</activemq.version>
 		<commons.io.version>2.4</commons.io.version>
 		<commons.lang3.version>3.4</commons.lang3.version>
+		<junit.version>4.12</junit.version>
 		<spring.version>4.2.5.RELEASE</spring.version>
 	</properties>
 
@@ -42,6 +43,12 @@
 		</dependency>
 		
 		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>${spring.version}</version>
+		</dependency>
+		
+		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 			<version>${commons.lang3.version}</version>
@@ -52,6 +59,21 @@
 			<artifactId>commons-io</artifactId>
 			<version>${commons.io.version}</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.apache.activemq.tooling</groupId>
+			<artifactId>activemq-junit</artifactId>
+			<version>5.13.1</version>
+			<scope>test</scope>
+		</dependency>
+		
 		
 	</dependencies>
 
@@ -67,6 +89,14 @@
 						<mainClass>demo.BatchSenderControl</mainClass>
 						<argument>-classpath</argument>
 						<classpath />
+					</configuration>
+				</plugin>
+				
+				<plugin>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>2.19</version>
+					<configuration>
+						<trimStackTrace>false</trimStackTrace>
 					</configuration>
 				</plugin>
 			</plugins>

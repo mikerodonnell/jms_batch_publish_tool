@@ -2,8 +2,11 @@ package demo;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Properties;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
@@ -17,7 +20,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  */
 public class BatchSenderControl {
 	
-	private static final String MESSAGE_FILE_DIRECTORY = "src/main/resources/message";
+	private static final String TEMPLATE_DIRECTORY = "src/main/resources/template/";
 	private static final String SPRING_CONTEXT_FILE_NAME = "context.xml";
 	
 	
@@ -40,9 +43,22 @@ public class BatchSenderControl {
 		}
 		
 		if( messageCount == null ) {
-			final File messageDirectory = new File(MESSAGE_FILE_DIRECTORY);
-			final File[] messageFiles = messageDirectory.listFiles();
-			batchSender.send( messageFiles, delay );
+			final File template = new File(TEMPLATE_DIRECTORY + "template");
+			final File inputs = new File(TEMPLATE_DIRECTORY + "inputs.properties");
+			
+			Properties properties = new Properties();
+			InputStream input = null;
+
+			try {
+				input = new FileInputStream(inputs);
+				properties.load(input);
+			}
+			finally {
+				if (input != null)
+					input.close();
+			}
+			
+			batchSender.send( template, properties, delay );
 		}
 		else {
 			batchSender.send( messageCount, delay );
@@ -94,7 +110,7 @@ public class BatchSenderControl {
 	private static Integer getMessageCount( final BufferedReader reader ) throws IOException {
 		Integer messageCount = -1;
 		
-		System.out.println("Now, press enter to send a JMS message for each file in " + MESSAGE_FILE_DIRECTORY + ". Or, enter a number of simple messages to send: ");
+		System.out.println("Now, press enter to send a JMS message for each set of values in " + TEMPLATE_DIRECTORY + "inputs.properties. Or, enter a number of simple messages to send: ");
 		while(true) {
 			System.out.print("  => ");
 			String input = reader.readLine().trim();
@@ -109,8 +125,8 @@ public class BatchSenderControl {
 				catch(NumberFormatException numberFormatException) { }
 			}
 			
-			if(messageCount == null || messageCount < 1)
-				System.out.println("Enter a positive integer, or press return to use files in " + MESSAGE_FILE_DIRECTORY + ":");
+			if(messageCount != null && messageCount < 1)
+				System.out.println("Enter a positive integer, or press return to use files in " + TEMPLATE_DIRECTORY + ":");
 			else
 				break;
 		}
