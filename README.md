@@ -1,7 +1,7 @@
 
 ##About
 
-A simple standalone JMS producer tool that can be used for connectivity/configuration verification, replaying traffic, or poor man's load testing. For message body, choose between a template with variables, or a generic test message. Unit testing is powered by ActiveMQ's [embedded broker](http://activemq.apache.org/how-to-unit-test-jms-code.html).
+A simple standalone JMS producer tool that can be used for connectivity/configuration verification, replaying traffic, or poor man's load testing. For the message body, create a template with variables, or choose a generic test message. Unit testing is powered by ActiveMQ's [embedded broker](http://activemq.apache.org/how-to-unit-test-jms-code.html).
 <br>
 <br>
 
