@@ -25,7 +25,7 @@ Unit testing is powered by ActiveMQ's [embedded broker](http://activemq.apache.o
 <br>
 6. `mvn exec:java`
 <br>
-7. follow the console prompts to select delay between each message, and whether to use a template or generic test message. if using a generic test message, you'll be prompted for a message count.
+7. follow the console prompts to select message body and delay between each messages. if using default test messages, you'll be prompted for a message count.
 <br>
 <br>
 
