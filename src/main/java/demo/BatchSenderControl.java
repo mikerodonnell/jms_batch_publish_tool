@@ -20,9 +20,14 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  */
 public class BatchSenderControl {
 	
+	private static final String MESSAGE_FILE_DIRECTORY = "src/main/resources/message";
 	private static final String TEMPLATE_DIRECTORY = "src/main/resources/template/";
 	private static final String SPRING_CONTEXT_FILE_NAME = "context.xml";
 	
+	
+	private enum MainMenuChoice {
+		SIMPLE, DIRECTORY, TEMPLATE;
+	}
 	
 	public static void main( String[] args ) throws IOException, InterruptedException {
 		System.out.println("hello, world!");
@@ -31,37 +36,43 @@ public class BatchSenderControl {
 		final BatchSender batchSender = context.getBean( BatchSender.class );
 		
 		final BufferedReader reader = new BufferedReader( new InputStreamReader(System.in) );
-		
 		int delay = 0;
 		Integer messageCount = null;
+		MainMenuChoice mainMenuChoice = null;
 		try {
 			delay = getDelaySeconds(reader);
-			messageCount = getMessageCount(reader);
+			mainMenuChoice = getMainMenuChoice(reader);
+			
+			if( MainMenuChoice.DIRECTORY.equals(mainMenuChoice) ) {
+				final File messageDirectory = new File(MESSAGE_FILE_DIRECTORY);
+				final File[] messageFiles = messageDirectory.listFiles();
+				batchSender.send( messageFiles, delay );
+			}
+			else if( MainMenuChoice.TEMPLATE.equals(mainMenuChoice) ) {
+				final File template = new File(TEMPLATE_DIRECTORY + "template");
+				final File inputs = new File(TEMPLATE_DIRECTORY + "inputs.properties");
+				
+				Properties properties = new Properties();
+				InputStream input = null;
+	
+				try {
+					input = new FileInputStream(inputs);
+					properties.load(input);
+				}
+				finally {
+					if (input != null)
+						input.close();
+				}
+				
+				batchSender.send( template, properties, delay );
+			}
+			else {
+				messageCount = getMessageCount(reader);
+				batchSender.send( messageCount, delay );
+			}
 		}
 		finally {
 			reader.close();
-		}
-		
-		if( messageCount == null ) {
-			final File template = new File(TEMPLATE_DIRECTORY + "template");
-			final File inputs = new File(TEMPLATE_DIRECTORY + "inputs.properties");
-			
-			Properties properties = new Properties();
-			InputStream input = null;
-
-			try {
-				input = new FileInputStream(inputs);
-				properties.load(input);
-			}
-			finally {
-				if (input != null)
-					input.close();
-			}
-			
-			batchSender.send( template, properties, delay );
-		}
-		else {
-			batchSender.send( messageCount, delay );
 		}
 		
 		( (AbstractApplicationContext) context).close();
@@ -101,7 +112,44 @@ public class BatchSenderControl {
 	
 	
 	/**
-	 * gets the number of test messages to send from the user. returns null to indicate that messages should be sent for all files in MESSAGE_FILE_DIRECTORY.
+	 * gets selection of message body source from the user -- either files in a directory, template with variables, or default simple message body.
+	 * 
+	 * @param reader
+	 * @return
+	 * @throws IOException
+	 */
+	private static MainMenuChoice getMainMenuChoice( final BufferedReader reader) throws IOException {
+		
+		System.out.println("Choose an option: ");
+		System.out.println("1) send a series of simple default JMS messages.");
+		System.out.println("2) send a JMS message for each file in " + MESSAGE_FILE_DIRECTORY);
+		System.out.println("3) send a JMS message for each set of values in " + TEMPLATE_DIRECTORY + "inputs.properties");
+		
+		while(true) {
+			System.out.print("  => ");
+			String input = reader.readLine().trim();
+			
+			int choice = -1;
+			try{
+				choice = Integer.valueOf(input);
+			}
+			catch(NumberFormatException numberFormatException) { }
+			
+			if(choice == 1)
+				return MainMenuChoice.SIMPLE;
+			if(choice == 2)
+				return MainMenuChoice.DIRECTORY;
+			if(choice == 3)
+				return MainMenuChoice.TEMPLATE;
+			
+			System.out.println("choose option 1, 2, or 3 above.");
+		}
+		
+	}
+	
+	
+	/**
+	 * gets the number of test messages to send from the user.
 	 * 
 	 * @param reader
 	 * @return a positive Integer, or null to indicate that messages should be sent for all files in MESSAGE_FILE_DIRECTORY.
@@ -110,7 +158,7 @@ public class BatchSenderControl {
 	private static Integer getMessageCount( final BufferedReader reader ) throws IOException {
 		Integer messageCount = -1;
 		
-		System.out.println("Now, press enter to send a JMS message for each set of values in " + TEMPLATE_DIRECTORY + "inputs.properties. Or, enter a number of simple messages to send: ");
+		System.out.println("Now, enter a number of simple default messages to send: ");
 		while(true) {
 			System.out.print("  => ");
 			String input = reader.readLine().trim();
@@ -126,7 +174,7 @@ public class BatchSenderControl {
 			}
 			
 			if(messageCount != null && messageCount < 1)
-				System.out.println("Enter a positive integer, or press return to use files in " + TEMPLATE_DIRECTORY + ":");
+				System.out.println("Enter a positive integer:");
 			else
 				break;
 		}

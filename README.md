@@ -1,7 +1,13 @@
 
 ##About
 
-A simple standalone JMS producer tool that can be used for connectivity/configuration verification, replaying traffic, or poor man's load testing. For the message body, create a template with variables, or choose a generic test message. Unit testing is powered by ActiveMQ's [embedded broker](http://activemq.apache.org/how-to-unit-test-jms-code.html).
+A simple standalone JMS producer tool that can be used for connectivity/configuration verification, replaying traffic, or poor man's load testing. For the message body, choose between
+
+ * a simple default test message
+ * a custom template with variables
+ * files in a configured directory
+
+Unit testing is powered by ActiveMQ's [embedded broker](http://activemq.apache.org/how-to-unit-test-jms-code.html).
 <br>
 <br>
 
@@ -13,11 +19,13 @@ A simple standalone JMS producer tool that can be used for connectivity/configur
 <br>
 3. edit src/main/resources/connection.properties with your JMS broker connection information.
 <br>
-4. if using a template for the message body, edit src/main/resources/template/template and src/main/resources/template/inputs.properties as desired. see example in src/main/resources/template/inputs.properties.
+4. if using files for the message body, place them in src/main/resources/message/. one message will be published for each file.
 <br>
-5. `mvn exec:java`
+5. if using a template for the message body, edit src/main/resources/template/template and src/main/resources/template/inputs.properties as desired. see example in src/main/resources/template/inputs.properties.
 <br>
-6. follow the console prompts to select delay between each message, and whether to use a template or generic test message. if using a generic test message, you'll be prompted for a message count.
+6. `mvn exec:java`
+<br>
+7. follow the console prompts to select delay between each message, and whether to use a template or generic test message. if using a generic test message, you'll be prompted for a message count.
 <br>
 <br>
 

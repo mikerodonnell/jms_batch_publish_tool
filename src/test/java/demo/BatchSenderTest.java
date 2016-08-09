@@ -12,6 +12,7 @@ import java.util.Properties;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
+import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
@@ -30,6 +31,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @ContextConfiguration(locations={"classpath:context.xml"}) // load the context.xml from our test classpath; it has different values than the context.xml from our main classpath
 public class BatchSenderTest {
 
+	private static final String MESSAGE_FILE_DIRECTORY = "src/test/resources/message";
 	private static final int RECEIVE_TIMEOUT_MILLIS = 5000; // 5 seconds
 	private static final String TEMPLATE_DIRECTORY = "src/test/resources/template/";
 	
@@ -82,6 +84,26 @@ public class BatchSenderTest {
 	
 	
 	@Test
+	public void testSendWithFile() throws Exception {
+		int messageCount = 2; // our resources/message/ directory has 2 message files
+		
+		final File messageDirectory = new File(MESSAGE_FILE_DIRECTORY);
+		final File[] messageFiles = messageDirectory.listFiles();
+		
+		batchSender.send( messageFiles );
+		
+		// now that we've done the publish, create a test consumer for our embedded broker to assert that the correct message contents were published
+		for( int receivedCount=0; receivedCount<messageCount; receivedCount++ ) {
+			TextMessage message = consumeNextMesage();
+			// verify the body of the JMS message matches the contents of the File object
+			assertEquals( FileUtils.readFileToString(messageFiles[receivedCount]), message.getText() );
+		}
+		
+		assertNull( consumeNextMesage() ); // now verify that no more messages were published
+	}
+	
+	
+	@Test
 	public void testSendWithTemplate() throws Exception {
 		int messageCount = 3; // our inpts.properties has data for 3 messages
 		
@@ -103,30 +125,46 @@ public class BatchSenderTest {
 		batchSender.send( template, properties );
 		
 		// now that we've done the publish, create a test consumer for our embedded broker to assert that the correct message contents were published
-		Connection connection = null;
+		for( int receivedCount=0; receivedCount<messageCount; receivedCount++ ) {
+			TextMessage message = consumeNextMesage();
+			File renderedTemplate = new File( TEMPLATE_DIRECTORY + "rendered_template_" + receivedCount );
+			// verify the body of the JMS message matches the "rendered" stub files
+			assertEquals( FileUtils.readFileToString(renderedTemplate), message.getText() );
+		}
+		
+		assertNull( consumeNextMesage() ); // now verify that no more messages were published
+	}
+	
+	
+	/**
+	 * helper method to read the next JMS message from our embedded broker's test queue. returns null if no messages are on the queue.
+	 * 
+	 * @return
+	 * @throws JMSException
+	 */
+	protected TextMessage consumeNextMesage() throws JMSException {
+		TextMessage message = null;
+		Connection jmsConnection = null;
 		Session consumerSession = null;
+		
 		try {
-			connection = connectionFactory.createConnection();
-			connection.start();
-			consumerSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+			jmsConnection = connectionFactory.createConnection();
+			jmsConnection.start();
+			consumerSession = jmsConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 			MessageConsumer consumer = consumerSession.createConsumer(defaultDestination);
 			
-			for( int receivedCount=0; receivedCount<messageCount; receivedCount++ ) {
-				TextMessage message = (TextMessage) consumer.receive(RECEIVE_TIMEOUT_MILLIS);
-				File renderedTemplate = new File( TEMPLATE_DIRECTORY + "rendered_template_" + receivedCount );
-				
-				assertEquals( FileUtils.readFileToString(renderedTemplate), message.getText() );
-			}
-			
-			assertNull( consumer.receive(RECEIVE_TIMEOUT_MILLIS) ); // now verify that no more messages were published
+			// consume 1 message from the queue
+			message = (TextMessage) consumer.receive(RECEIVE_TIMEOUT_MILLIS);
 		}
 		finally {
 			if(consumerSession != null)
 				consumerSession.close();
 			
-			if(connection != null)
-				connection.close();
+			if(jmsConnection != null)
+				jmsConnection.close();
 		}
+		
+		return message;
 	}
 	
 }

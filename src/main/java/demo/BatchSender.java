@@ -56,6 +56,32 @@ public class BatchSender {
 	}
 	
 	
+	public void send( final File[] messageFiles ) throws IOException, InterruptedException {
+		send( messageFiles, DEFAULT_DELAY_SECONDS );
+	}
+	
+	/**
+	 * publish a JMS message for each file in the given messageFiles, with the contents of the file as the message body.
+	 * 
+	 * @param messageFiles
+	 * @param delaySeconds
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	public void send( final File[] messageFiles, int delaySeconds ) throws IOException, InterruptedException {
+		System.out.println("sending message for each of " + messageFiles.length + " files with " + delaySeconds + " seconds between messages");
+		
+		final SimpleMessageCreator creator = new SimpleMessageCreator();
+		
+		for( int index=0; index<messageFiles.length; index++ ) {
+			String messageBody = FileUtils.readFileToString( messageFiles[index] );
+			System.out.println("sending message: " + (index+1) + " of " + messageFiles.length);
+			creator.setMessage(messageBody);
+  			jmsTemplate.send(creator);
+		}
+	}
+	
+	
 	public void send( final File template, final Properties inputs ) throws IOException, InterruptedException {
 		send( template, inputs, DEFAULT_DELAY_SECONDS );
 	}
