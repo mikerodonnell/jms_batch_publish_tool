@@ -1,0 +1,6 @@
+{
+	"message_class": "user",
+	"action": "CREATE",
+	"username": "rmarsh",
+	"password:" "beer"
+}
