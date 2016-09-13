@@ -1,12 +1,18 @@
 package demo;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TimeZone;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
-
 import org.springframework.jms.core.JmsTemplate;
 
 /**
@@ -82,13 +88,13 @@ public class BatchSender {
 	}
 	
 	
-	public void send( final File template, final Properties inputs ) throws IOException, InterruptedException {
+	public void send( final File template, final File inputs ) throws IOException, InterruptedException {
 		send( template, inputs, DEFAULT_DELAY_SECONDS );
 	}
 	
 	
 	/**
-	 * publish a JMS message based on the given template for each set of values in the given Properties. inputs are injected into the template for the pattern
+	 * publish a JMS message based on the given template File for each set of values in the given CSV File. inputs are injected into the template for the pattern
 	 * ${keyName}. comma-delimited Strings are used for sending multiple messages with the same template.
 	 * 
 	 * for example, for the following template:
@@ -97,9 +103,11 @@ public class BatchSender {
 	 *   <PASSWORD>${password}</PASSWORD>
 	 * </EVENT>
 	 * 
-	 * the following properties:
-	 * username=tjones,bsmith,jryan
-	 * password=admin123,password1,Password123
+	 * the following CSV:
+	 * username,password
+	 * tjones,admin123
+	 * bsmith,password1
+	 * jryan,Password123
 	 * 
 	 * will result in 3 messages, the first being:
 	 * <EVENT type="NEW">
@@ -108,53 +116,65 @@ public class BatchSender {
 	 * </EVENT>
 	 * 
 	 * @param template
-	 * @param inputs set of key-value-pairs, each value being comma-delimited String. example: username=tjones,bsmith,jryan
+	 * @param inputs
 	 * @param delaySeconds the number of seconds to pause between each message
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	public void send( final File template, final Properties inputs, int delaySeconds ) throws IOException, InterruptedException {
+	public void send( final File template, final File inputs, int delaySeconds ) throws IOException, InterruptedException {
 		
 		System.out.println("creating messages by injecting properties into message body template, with " + delaySeconds + " seconds between messages");
 		
 		final SimpleMessageCreator creator = new SimpleMessageCreator();
 		
-		/* suppose we have the following in our properties file:
-			username=tjones,bsmith,jryan
-			password=admin123,password1,Password123
-		*/
-		Integer messageCount = null;
-		Map<String, List<String>> values = new HashMap<String, List<String>>();
-		for( String key : inputs.stringPropertyNames() ) {
-			String csv = inputs.getProperty(key);
-			List<String> list = Arrays.asList( csv.split(",") );
-			
-			// the first loop through, capture the messageCount (3 in this case, one message for "tjones"+"admin123", one for "bsmith"+"password1", and one for "jryan"+"Password123"
-			if(messageCount==null)
-				messageCount = list.size();
-			
-			values.put(key, list);
-		}
-		/* values map is now:
-			"username" => ["tjones", "bsmith", "jryan"]
-			"password" => ["admin123", "password1", "Password123"]
-		*/
+		final String templateBody = FileUtils.readFileToString(template);
 		
-		for( int index=0; index<messageCount; index++ ) { // messageCount is 3 in our example
-			String messageBody = FileUtils.readFileToString( template );
+		final Map<String, Integer> columnIndices = new HashMap<String, Integer>();
+		
+		final Reader reader = new FileReader(inputs);
+		
+		final Iterable<CSVRecord> records;
+		try {
+			// the Reader stays open until the last message is published; we're just getting an Iterable, not pulling all CSV records into memory
+			records = CSVFormat.DEFAULT.parse(reader);
 			
-			for( Object key : inputs.keySet() ) { // our key set is {"username", "password"} in our example
-				String keyString = (String) key;
-				String injectValue = values.get(keyString).get(index); // injectValue is "tjones" for index=0 and keyString="username"
-				messageBody = messageBody.replace( ("${" + keyString + "}"), injectValue ); // look for ${username} and replace it with tjones
+			/* suppose we have the following in our CSV file:
+				username,password
+				tjones,admin123
+				bsmith,password1
+			*/
+			for( CSVRecord record : records ) { // records has length/size 3 in our example
+				
+				/* if this is our first record in the CSV, it's the header row. scan the headers and store them in columnIndices so we can process the following rows. example:
+					columnIndices => {
+						"username" => 0
+						"password" => 1
+					}
+				*/
+				if(record.getRecordNumber()==1) {
+					for( int columnIndex=0; columnIndex<record.size(); columnIndex++ )
+						columnIndices.put(record.get(columnIndex), columnIndex);
+					
+					continue; // all done with this record, skip to next record
+				}
+				
+				String messageBody = templateBody; // start with the template, then we'll inject variables into it one at a time
+				for( String columnName : columnIndices.keySet() ) { // our key set is {"username", "password"} in our example
+					String injectValue = record.get(columnIndices.get(columnName)); // injectValue is "tjones" for index=0 and columnName="username"
+					messageBody = messageBody.replace( ("${" + columnName + "}"), injectValue ); // look for ${username} and replace it with tjones
+				}
+				
+				System.out.println("sending message # " + (record.getRecordNumber()-1));
+				creator.setMessage(messageBody);
+				jmsTemplate.send(creator);
+				
+				if(delaySeconds > 0)
+					Thread.sleep(1000*delaySeconds);
 			}
-			
-			System.out.println("sending message: " + (index+1) + " of " + messageCount);
-			creator.setMessage(messageBody);
-			jmsTemplate.send(creator);
-			
-			if(delaySeconds > 0)
-				Thread.sleep(1000*delaySeconds);
+		}
+		finally {
+			if (reader != null)
+				reader.close();
 		}
 	}
 	

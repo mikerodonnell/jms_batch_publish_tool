@@ -1,0 +1,13 @@
+# delete these comments and put your comma-separated values, with a header row) in this file (and nothing else).
+# the CSV values will correspond to the template file in this same directory.
+#
+# for example, if we have a template: 
+#    <EVENT type="NEW">
+#      <USERNAME>${username}</USERNAME>
+#      <PASSWORD>${password}</PASSWORD>
+#    </EVENT>
+#   
+#   then this file might look like this, which would result in 2 messages:
+#    username,password
+#    tjones,admin123
+#    bsmith,jryan

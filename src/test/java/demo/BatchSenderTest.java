@@ -5,9 +5,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.Properties;
+import java.io.FileReader;
+import java.io.Reader;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -18,6 +17,7 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.activemq.junit.EmbeddedActiveMQBroker;
+import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -108,21 +108,9 @@ public class BatchSenderTest {
 		int messageCount = 3; // our inpts.properties has data for 3 messages
 		
 		File template = new File(TEMPLATE_DIRECTORY + "template");
-		File inputs = new File(TEMPLATE_DIRECTORY + "inputs.properties");
+		File inputs = new File(TEMPLATE_DIRECTORY + "inputs.csv");
 		
-		Properties properties = new Properties();
-		InputStream input = null;
-
-		try {
-			input = new FileInputStream(inputs);
-			properties.load(input);
-		}
-		finally {
-			if (input != null)
-				input.close();
-		}
-		
-		batchSender.send( template, properties );
+		batchSender.send( template, inputs );
 		
 		// now that we've done the publish, create a test consumer for our embedded broker to assert that the correct message contents were published
 		for( int receivedCount=0; receivedCount<messageCount; receivedCount++ ) {
