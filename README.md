@@ -14,7 +14,7 @@ Unit testing is powered by ActiveMQ's [embedded broker](http://activemq.apache.o
 1. clone the repository: `git clone git@github.com:mikerodonnell/jms_batch_publisher.git`
 2. edit src/main/resources/connection.properties with your JMS broker connection information.
 3. if using files for the message body, place them in src/main/resources/message/. one message will be published for each file.
-4. if using a template for the message body, edit src/main/resources/template/template and src/main/resources/template/inputs.properties as desired. see example in src/main/resources/template/inputs.properties.
+4. if using a template for the message body, edit src/main/resources/template/template and src/main/resources/template/inputs.csv as desired. see example in src/main/resources/template/inputs.csv.
 5. `mvn clean install`
 6. `mvn exec:java`
 7. follow the console prompts to select message body and delay between each messages. if using default test messages, you'll be prompted for a message count.
