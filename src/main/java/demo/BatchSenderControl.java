@@ -112,7 +112,7 @@ public class BatchSenderControl {
 		System.out.println("Choose an option: ");
 		System.out.println("1) send a series of simple default JMS messages.");
 		System.out.println("2) send a JMS message for each file in " + MESSAGE_FILE_DIRECTORY);
-		System.out.println("3) send a JMS message for each set of values in " + TEMPLATE_DIRECTORY + "inputs.properties");
+		System.out.println("3) send a JMS message for each row in " + TEMPLATE_DIRECTORY + "inputs.csv");
 		
 		while(true) {
 			System.out.print("  => ");
