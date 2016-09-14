@@ -5,8 +5,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.Reader;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -17,7 +15,6 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.activemq.junit.EmbeddedActiveMQBroker;
-import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -105,7 +102,7 @@ public class BatchSenderTest {
 	
 	@Test
 	public void testSendWithTemplate() throws Exception {
-		int messageCount = 3; // our inpts.properties has data for 3 messages
+		int messageCount = 3; // our inputs.csv has data for 3 messages
 		
 		File template = new File(TEMPLATE_DIRECTORY + "template");
 		File inputs = new File(TEMPLATE_DIRECTORY + "inputs.csv");
@@ -121,6 +118,25 @@ public class BatchSenderTest {
 		}
 		
 		assertNull( consumeNextMesage() ); // now verify that no more messages were published
+	}
+	
+	
+	// verify that when CSV rows are missing values, those rows are skipped and valid rows are still successfully processed
+	@Test
+	public void testSendWithTemplateMissingValues() throws Exception {
+		File template = new File(TEMPLATE_DIRECTORY + "template");
+		File inputs = new File(TEMPLATE_DIRECTORY + "inputs_missing_values.csv");
+		
+		batchSender.send( template, inputs );
+		
+		// now that we've done the publish, create a test consumer for our embedded broker to assert that the correct message contents were published
+		TextMessage message = consumeNextMesage();
+		
+		File renderedTemplate = new File( TEMPLATE_DIRECTORY + "rendered_template_2" );
+		// verify the body of the JMS message matches the "rendered" stub files
+		assertEquals( FileUtils.readFileToString(renderedTemplate), message.getText() );
+		
+		assertNull( consumeNextMesage() ); // now verify that no more messages were published. only one row in our CSV has all fields, so only 1 message should be sent
 	}
 	
 	

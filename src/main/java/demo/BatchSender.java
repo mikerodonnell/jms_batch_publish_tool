@@ -5,14 +5,19 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.jms.core.JmsTemplate;
 
 /**
@@ -133,6 +138,14 @@ public class BatchSender {
 		
 		final Reader reader = new FileReader(inputs);
 		
+		// we need to collect the template variables ahead of time, because we require that each has a value from the CSV
+		final Collection<String> templateVariables = new HashSet<String>();
+		final Pattern pattern = Pattern.compile("\\$\\{.*\\}"); // double slash to for each regex escape character, because the backslash itself is a Java special character
+		final Matcher matcher = pattern.matcher(templateBody);
+		
+		while(matcher.find())
+			templateVariables.add(matcher.group()); // the values in templateVariables include the brackets, example: "${username}"
+		
 		final Iterable<CSVRecord> records;
 		try {
 			// the Reader stays open until the last message is published; we're just getting an Iterable, not pulling all CSV records into memory
@@ -143,6 +156,7 @@ public class BatchSender {
 				tjones,admin123
 				bsmith,password1
 			*/
+			csvLoop: // we'll use this tag to continue to the next record when skipping invalid ones.
 			for( CSVRecord record : records ) { // records has length/size 3 in our example
 				
 				/* if this is our first record in the CSV, it's the header row. scan the headers and store them in columnIndices so we can process the following rows. example:
@@ -159,9 +173,17 @@ public class BatchSender {
 				}
 				
 				String messageBody = templateBody; // start with the template, then we'll inject variables into it one at a time
-				for( String columnName : columnIndices.keySet() ) { // our key set is {"username", "password"} in our example
-					String injectValue = record.get(columnIndices.get(columnName)); // injectValue is "tjones" for index=0 and columnName="username"
-					messageBody = messageBody.replace( ("${" + columnName + "}"), injectValue ); // look for ${username} and replace it with tjones
+				
+				for( String templateVariable : templateVariables ) {
+					String columnName = templateVariable.substring(2, templateVariable.length()-1); // for example templateVariable=="${username}", columnName=="username"
+					String injectValue = record.get(columnIndices.get(columnName));
+					
+					if(StringUtils.isEmpty(injectValue)) {
+						System.out.println("WARN: skipping message # " + (record.getRecordNumber()-1) + " because no value was found in the CSV for the template variable " + templateVariable);
+						continue csvLoop;
+					}
+					
+					messageBody = messageBody.replace( templateVariable, injectValue );
 				}
 				
 				System.out.println("sending message # " + (record.getRecordNumber()-1));
