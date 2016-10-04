@@ -2,6 +2,7 @@ package demo;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Reader;
 import java.text.SimpleDateFormat;
@@ -67,8 +68,8 @@ public class BatchSender {
 	}
 	
 	
-	public void send( final File[] messageFiles ) throws IOException, InterruptedException {
-		send( messageFiles, DEFAULT_DELAY_SECONDS );
+	public void send( final File messageDirectory ) throws IOException, InterruptedException {
+		send( messageDirectory, DEFAULT_DELAY_SECONDS );
 	}
 	
 	/**
@@ -79,7 +80,8 @@ public class BatchSender {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	public void send( final File[] messageFiles, int delaySeconds ) throws IOException, InterruptedException {
+	public void send( final File messageDirectory, int delaySeconds ) throws IOException, InterruptedException {
+		final File[] messageFiles = messageDirectory.listFiles( new HiddenFileFilter() );
 		System.out.println("sending message for each of " + messageFiles.length + " files with " + delaySeconds + " seconds between messages");
 		
 		final SimpleMessageCreator creator = new SimpleMessageCreator();
@@ -88,7 +90,7 @@ public class BatchSender {
 			String messageBody = FileUtils.readFileToString( messageFiles[index] );
 			System.out.println("sending message: " + (index+1) + " of " + messageFiles.length);
 			creator.setMessage(messageBody);
-  			jmsTemplate.send(creator);
+			jmsTemplate.send(creator);
 		}
 	}
 	

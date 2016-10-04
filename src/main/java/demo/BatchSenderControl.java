@@ -2,13 +2,9 @@ package demo;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
@@ -46,8 +42,7 @@ public class BatchSenderControl {
 			
 			if( MainMenuChoice.DIRECTORY.equals(mainMenuChoice) ) {
 				final File messageDirectory = new File(MESSAGE_FILE_DIRECTORY);
-				final File[] messageFiles = messageDirectory.listFiles();
-				batchSender.send( messageFiles, delay );
+				batchSender.send( messageDirectory, delay );
 			}
 			else if( MainMenuChoice.TEMPLATE.equals(mainMenuChoice) ) {
 				final File template = new File(TEMPLATE_DIRECTORY + "template");

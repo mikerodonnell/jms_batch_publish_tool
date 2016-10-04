@@ -85,11 +85,11 @@ public class BatchSenderTest {
 		int messageCount = 2; // our resources/message/ directory has 2 message files
 		
 		final File messageDirectory = new File(MESSAGE_FILE_DIRECTORY);
-		final File[] messageFiles = messageDirectory.listFiles();
 		
-		batchSender.send( messageFiles );
+		batchSender.send(messageDirectory);
 		
 		// now that we've done the publish, create a test consumer for our embedded broker to assert that the correct message contents were published
+		final File[] messageFiles = messageDirectory.listFiles(new HiddenFileFilter());
 		for( int receivedCount=0; receivedCount<messageCount; receivedCount++ ) {
 			TextMessage message = consumeNextMesage();
 			// verify the body of the JMS message matches the contents of the File object
