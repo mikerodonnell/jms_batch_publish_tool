@@ -35,5 +35,4 @@ public class SimpleMessageCreator implements MessageCreator {
 		textMessage = session.createTextMessage(message);
 		return textMessage;
 	}
-	
 }

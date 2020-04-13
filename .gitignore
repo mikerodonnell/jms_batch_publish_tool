@@ -1,0 +1,11 @@
+*.class
+target
+.DS_store
+.idea
+*.iml
+
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz

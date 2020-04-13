@@ -14,5 +14,4 @@ public class HiddenFileFilter implements FilenameFilter {
 	public boolean accept( final File directory, final String name ) {
 		return !name.startsWith(".");
 	}
-
 }
