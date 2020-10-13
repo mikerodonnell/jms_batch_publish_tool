@@ -14,7 +14,7 @@
 		<commons.csv.version>1.4</commons.csv.version>
 		<commons.io.version>2.4</commons.io.version>
 		<commons.lang3.version>3.4</commons.lang3.version>
-		<junit.version>4.13</junit.version>
+		<junit.version>4.13.1</junit.version>
 		<spring.version>4.3.26.RELEASE</spring.version>
 		<maven.compiler.target>11</maven.compiler.target>
 		<maven.compiler.source>11</maven.compiler.source>
