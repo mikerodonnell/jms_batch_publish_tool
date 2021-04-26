@@ -12,7 +12,7 @@
 	<properties>
 		<activemq.version>5.11.4</activemq.version>
 		<commons.csv.version>1.4</commons.csv.version>
-		<commons.io.version>2.4</commons.io.version>
+		<commons.io.version>2.7</commons.io.version>
 		<commons.lang3.version>3.4</commons.lang3.version>
 		<junit.version>4.13</junit.version>
 		<spring.version>4.3.26.RELEASE</spring.version>
